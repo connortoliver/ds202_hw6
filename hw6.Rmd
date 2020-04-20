@@ -1,0 +1,16 @@
+---
+title: 'Homework #6'
+author: "Connor Toliver; @connortoliver"
+date: "4/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+readxl::read_xlsx('KIB - Best in Show (public).xlsx', sheet='Best in show full sheet')
+```
+
