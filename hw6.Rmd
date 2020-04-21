@@ -5,12 +5,77 @@ date: "4/20/2020"
 output: html_document
 ---
 
+# Top dogs
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+First, let's load in our data and select what we want to use.
+
 ```{r}
 library(tidyverse)
-readxl::read_xlsx('KIB - Best in Show (public).xlsx', sheet='Best in show full sheet')
+df <- readxl::read_xlsx('KIB - Best in Show (public).xlsx', sheet='Best in show full sheet', skip = 2)
+df <- df %>% 
+  select(breed = `Sources - see bottom right`, type = category, size = `size category`,
+         score = `datadog score`, popularity = `POPULARITY IN US...6`, int = `INTELLIGENCE (TRAINABILITY) ranking`) %>% 
+  na.omit()
+
+head(df)
 ```
 
+We have quitet a bit of cleaning to do. First, let's get rid of the first row because it's extraneous.
+
+
+```{r}
+df <- df[-1, ]
+
+head(df)
+```
+
+Now, let's look at the structure of our data. 
+
+```{r}
+str(df)
+```
+
+`popularity` and `int` should be numeric. Let's change that. Let's also factor the size and change `int` to be more like the original graph.
+
+```{r}
+df$size <- factor(df$size, levels = c('small', 'medium', 'large'))
+df$popularity <- as.numeric(df$popularity)
+df$int <- as.numeric(df$int)
+
+df <- df %>% 
+  mutate(int = ifelse(int >= 0.5, 'clever', 'dumb'))
+# x-axis: data score
+# y-axis: popularity
+# color: type
+# size: size
+# label: breed
+# shape: intelligence
+```
+
+Now let's get started on the graphic with `ggplot`.
+
+```{r}
+ggplot(df, aes(x = score, y = popularity, color = type,
+               size = size, shape = int)) +
+  geom_jitter(alpha = 0.7) +
+  ggrepel::geom_text_repel(aes(label = str_wrap(df$breed, width = 12)), size = ifelse(str_length(df$breed) > 15, 1.4, 1.8)) +
+  geom_hline(yintercept = 77) +
+  geom_vline(xintercept = 2.4) +
+  xlim(min(df$score)-0.05, max(df$score)+0.5) +
+  ylim(0, 200) +
+  scale_y_reverse() +
+  scale_size_discrete(range=c(3, 6, 9)) +
+  theme_classic() +
+  theme(legend.position='right', axis.text = element_blank(), axis.ticks = element_blank(),
+        axis.line = element_blank()) +
+  ggtitle('Best in Show: The Ultimate Data Dog') +
+  xlab('Popularity') +
+  ylab('Datadog Score') +
+  labs(size = 'Size', color = 'Type', shape = 'Intelligence')
+```
+
+It's not exact, but it's a fairly reasonable reproduction of the original graph!
